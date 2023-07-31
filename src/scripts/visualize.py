@@ -76,13 +76,14 @@ def visualize(cfg: DictConfig) -> None:
         scene_dir = f"{cfg.output_dir}/{cfg.dataset_name}{scene_id:06d}"
         os.makedirs(scene_dir, exist_ok=True)
         save_path = f"{scene_dir}/{image_id:06d}.png"
+        shape0, shape1 = img.shape[0], img.shape[1]
         img = Image.fromarray(np.uint8(img))
         img.save(save_path)
         prediction = Image.open(save_path)
         # concat side by side in PIL
-        concat = Image.new('RGB', (img.shape[1] + prediction.size[0], img.shape[0]))
+        concat = Image.new('RGB', (shape1 + prediction.size[0], shape0))
         concat.paste(rgb, (0, 0))
-        concat.paste(prediction, (img.shape[1], 0))
+        concat.paste(prediction, (shape1, 0))
         concat.save(save_path)
         if counter % 10 == 0:
             logging.info(f"Saving {save_path}")
