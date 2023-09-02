@@ -168,7 +168,7 @@ class LoFTR():
             if self.test_mode:
                 mask0 = torch.from_numpy(np.loadtxt(self.qry_mask,dtype=np.int8, delimiter=' '))
             else:
-                mask0 = self.crop_mask
+                mask0 = torch.from_numpy(self.crop_mask)
         else:
             mask0 = torch.ones_like(mask0)
         for x in range(mask0.shape[1]):
@@ -182,17 +182,20 @@ class LoFTR():
 
         qry_img_crop = self.crop_resize_img(qry_corners[0],qry_corners[1],qry_corners[2],
                                             qry_corners[3], qry_img , original_K)
-        cv2.imwrite(osp.join('/mnt/data2/interns/gid-baiyan/cnos/test/crop','qry' + str(self.ref_idx)+'.png'),qry_img_crop)
+        
+        if self.test_mode:
+            cv2.imwrite(osp.join('/mnt/data2/interns/gid-baiyan/cnos/test/crop','qry' + str(self.ref_idx)+'.png'),qry_img_crop)
         
         qry_image_crop = self.np_to_ts(qry_img_crop)
         ref_image_crop = self.np_to_ts(ref_img_crop)
 
-        print("ref_corners:",ref_corners)
-        print("qry_corners:",qry_corners)
-        print("qry img shape:",img0.shape)
-        print("ref img shape:",img1.shape)
-        print("qry mask shape:",mask0.shape)
-        print("ref mask shape:",mask1.shape)
+        if self.test_mode:
+            print("ref_corners:",ref_corners)
+            print("qry_corners:",qry_corners)
+            print("qry img shape:",img0.shape)
+            print("ref img shape:",img1.shape)
+            print("qry mask shape:",mask0.shape)
+            print("ref mask shape:",mask1.shape)
 
         [ts_mask_0, ts_mask_1] = F.interpolate(torch.stack([mask0, mask1], dim=0)[None].float(),
                                                     scale_factor=0.125,
@@ -201,7 +204,8 @@ class LoFTR():
 
         ts_mask_0.unsqueeze_(0)
         ts_mask_1.unsqueeze_(0)
-        print("down sampled mask shape:",ts_mask_1.shape)
+        if self.test_mode:
+            print("down sampled mask shape:",ts_mask_1.shape)
 
         return qry_image_crop, ref_image_crop, ts_mask_0, ts_mask_1
 
@@ -232,16 +236,6 @@ class LoFTR():
         affine, _= cv2.estimateAffine2D(
                 mkpts0, mkpts1, method=cv2.RANSAC, ransacReprojThreshold=6
             )
-        
-        # Estimate box:
-        four_corner = self.corners_homo
-        bbox = (affine @ four_corner).T.astype(np.int32)  # 4*2
-        #print("bbox:",bbox)
-
-        left_top = np.min(bbox, axis=0)
-        right_bottom = np.max(bbox, axis=0)
-        print(left_top)
-        print(right_bottom)
 
         # w ,h = right_bottom - left_top
         # offset_percent = 0.0

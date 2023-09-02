@@ -91,8 +91,30 @@ def visualize(rgb, detections, obj_name, qry_id):
         colored_img[mask, 0] = alpha*r + (1 - alpha)*img[mask, 0]
         colored_img[mask, 1] = alpha*g + (1 - alpha)*img[mask, 1]
         colored_img[mask, 2] = alpha*b + (1 - alpha)*img[mask, 2] 
-
-        
+        max_mnum, sum_mnum = 0, 0
+        global metrics
+        for ref_idx in range(15):
+            LT = LoFTR(obj_name = obj_name, query_idx = qry_id, 
+                            ref_idx= ref_idx, top_idx = temp_id, 
+                            mask_qry = True, test_mode = False,
+                            crop_img = crop_img, crop_mask = mask)
+            img0, img1, ts_mask_0, ts_mask_1 = LT.load_img_mask()
+            mkpts0, mkpts1, inliers0, inliers1, mnum = LT.get_matching_result(img0, img1, ts_mask_0,ts_mask_1)
+            LT.add_kpc_to_vis3d(img0, img1, inliers0, inliers1)
+            if max_mnum < mnum :
+                max_mnum = mnum
+                best_id = ref_idx
+            sum_mnum = sum_mnum + mnum
+            print("-----------------------------------")
+        average_mnum = sum_mnum / 20
+        metrics.append(max_mnum)
+        print("obj_name", obj_name)
+        print("qry_idx:",qry_id)
+        print("top_idx:",temp_id)
+        print("average_mnum:",average_mnum)
+        print("max_mnum:",max_mnum)
+        print("best_id:",best_id)
+        print("-----------------------------------")
         cv2.imwrite(osp.join(save_path, f"{mask_idx}.png"), crop_img)        
         np.savetxt(osp.join(save_path, f"{mask_idx}.txt"), mask, fmt='%d')
         # img = Image.fromarray(np.uint8(crop_img))
@@ -215,10 +237,13 @@ if __name__ == "__main__":
                                 "color_full",)
     model, metric, ref_feats = global_feats(ref_frames_path)
     logging.info("start inference")
-    for qry_id in range(0, 100):
+    
+    for qry_id in range(0, 10):
+        metrics = []
         query_frame_path = osp.join(query_frames_path, f"{qry_id}.png")
         run_inference(ref_frames_path, query_frame_path, num_max_dets=5, conf_threshold=0.5, 
                       obj_name=obj_name, qry_id=qry_id, model=model, metric=metric, ref_feats=ref_feats)
+        logging.info(f"metrics:{metrics}")
         print("————————————————————————")
     # parser = argparse.ArgumentParser()
     # parser.add_argument("template_dir", nargs="?", 
