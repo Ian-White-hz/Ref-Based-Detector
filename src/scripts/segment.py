@@ -23,7 +23,7 @@ import torchvision.transforms as T
 from src.model.utils import Detections, convert_npz_to_json
 from src.model.loss import Similarity
 from src.utils.inout import save_json_bop23
-from src.utils.LoFTR import LoFTR
+from src.utils.matching import LoFTR
 import cv2
 import distinctipy
 from skimage.feature import canny
@@ -92,8 +92,8 @@ def visualize(rgb, detections, obj_name, qry_id):
         colored_img[mask, 1] = alpha*g + (1 - alpha)*img[mask, 1]
         colored_img[mask, 2] = alpha*b + (1 - alpha)*img[mask, 2] 
 
-        cv2.imwrite(osp.join(save_path, f"{mask_idx}.png"), crop_img)
         
+        cv2.imwrite(osp.join(save_path, f"{mask_idx}.png"), crop_img)        
         np.savetxt(osp.join(save_path, f"{mask_idx}.txt"), mask, fmt='%d')
         # img = Image.fromarray(np.uint8(crop_img))
         # img.save(save_path)
