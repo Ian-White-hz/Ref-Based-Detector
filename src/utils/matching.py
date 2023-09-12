@@ -141,11 +141,15 @@ class LoFTR():
         print("query frame path:",self.query_fname)
         print("ref frame path:",self.ref_fname)
 
-        img0, mask0 = self.load_torch_image(self.query_fname)
-        img1, mask1 = self.load_torch_image(self.ref_fname)
-
-        qry_img = cv2.imread(self.query_fname)
+        if self.test_mode:
+            img0, mask0 = self.load_torch_image(self.query_fname)
+            img1, mask1 = self.load_torch_image(self.ref_fname)
+            qry_img = cv2.imread(self.query_fname)
+        else:
+            qry_img = self.crop_img
+            
         ref_img = cv2.imread(self.ref_fname)
+
         original_K = np.array([[572.4114, 0, 325.2611], [0, 573.57043, 242.04899], [0, 0, 1]])
         ref_img_crop = self.crop_resize_img(ref_corners[0],ref_corners[1],ref_corners[2],
                                             ref_corners[3], ref_img , original_K)
@@ -167,6 +171,7 @@ class LoFTR():
         if self.mask_qry:
             if self.test_mode:
                 mask0 = torch.from_numpy(np.loadtxt(self.qry_mask,dtype=np.int8, delimiter=' '))
+                mask1[ref_corners[1]:ref_corners[3],ref_corners[0]:ref_corners[2]] = 1
             else:
                 mask0 = torch.from_numpy(self.crop_mask)
         else:
@@ -178,7 +183,7 @@ class LoFTR():
                     qry_corners[1] = np.min([qry_corners[1],y])
                     qry_corners[2] = np.max([qry_corners[2],x])
                     qry_corners[3] = np.max([qry_corners[3],y])
-        mask1[ref_corners[1]:ref_corners[3],ref_corners[0]:ref_corners[2]] = 1
+        
 
         qry_img_crop = self.crop_resize_img(qry_corners[0],qry_corners[1],qry_corners[2],
                                             qry_corners[3], qry_img , original_K)

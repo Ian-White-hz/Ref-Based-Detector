@@ -92,13 +92,13 @@ def visualize(rgb, detections, obj_name, qry_id):
         colored_img[mask, 1] = alpha*g + (1 - alpha)*img[mask, 1]
         colored_img[mask, 2] = alpha*b + (1 - alpha)*img[mask, 2] 
         max_mnum, sum_mnum = 0, 0
-        global metrics
+        global max_mnums, average_mnums
         for ref_idx in range(15):
             LT = LoFTR(obj_name = obj_name, query_idx = qry_id, 
                             ref_idx= ref_idx, top_idx = temp_id, 
                             mask_qry = True, test_mode = False,
                             crop_img = crop_img, crop_mask = mask)
-            img0, img1, ts_mask_0, ts_mask_1 = LT.load_img_mask()
+            #img0, img1, ts_mask_0, ts_mask_1 = LT.load_img_mask()
             mkpts0, mkpts1, inliers0, inliers1, mnum = LT.get_matching_result(img0, img1, ts_mask_0,ts_mask_1)
             LT.add_kpc_to_vis3d(img0, img1, inliers0, inliers1)
             if max_mnum < mnum :
@@ -107,7 +107,8 @@ def visualize(rgb, detections, obj_name, qry_id):
             sum_mnum = sum_mnum + mnum
             print("-----------------------------------")
         average_mnum = sum_mnum / 20
-        metrics.append(max_mnum)
+        max_mnums.append(max_mnum)
+        average_mnums.append(average_mnum)
         print("obj_name", obj_name)
         print("qry_idx:",qry_id)
         print("top_idx:",temp_id)
@@ -217,11 +218,6 @@ def run_inference(template_dir, rgb_path, num_max_dets, conf_threshold, obj_name
     vis_img = visualize(rgb, detections, obj_name=obj_name, qry_id=qry_id)
     vis_img.save(f"{template_dir}/cnos_results/vis.png")
 
-def matching():
-    pass
-
-def retrieval():
-    pass
 
 if __name__ == "__main__":
     obj_name = "ape"
@@ -238,12 +234,13 @@ if __name__ == "__main__":
     model, metric, ref_feats = global_feats(ref_frames_path)
     logging.info("start inference")
     
-    for qry_id in range(0, 10):
-        metrics = []
+    for qry_id in range(20, 22):
+        max_mnums, average_mnums = [], []
         query_frame_path = osp.join(query_frames_path, f"{qry_id}.png")
         run_inference(ref_frames_path, query_frame_path, num_max_dets=5, conf_threshold=0.5, 
                       obj_name=obj_name, qry_id=qry_id, model=model, metric=metric, ref_feats=ref_feats)
-        logging.info(f"metrics:{metrics}")
+        logging.info(f"max:{max_mnums}")
+        logging.info(f"aver:{average_mnums}")
         print("————————————————————————")
     # parser = argparse.ArgumentParser()
     # parser.add_argument("template_dir", nargs="?", 
